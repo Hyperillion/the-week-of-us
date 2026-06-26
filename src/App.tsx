@@ -1206,6 +1206,97 @@ export default function App() {
                           </div>
                         </div>
 
+                        {/* Conflict Handling badge & analysis */}
+                        <div className="card report-card-conflict">
+                          <h3>本周摩擦沟通模式</h3>
+                          <div className="conflict-badge-container" id="conflict-badge-container">
+                            {conflictBadgeInfo && (
+                              <>
+                                <div className={`badge-art ${conflictBadgeInfo.badgeClass}`}>
+                                  {conflictBadgeInfo.icon}
+                                </div>
+                                <div className="conflict-badge-name">{conflictBadgeInfo.name}</div>
+                                <div className="conflict-badge-desc">{conflictBadgeInfo.desc}</div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Private Messages / Letters Box */}
+                        <div className="card report-card-messages full-width">
+                          <div className="messages-header-row">
+                            <h3>彼此的三句话碎碎念 📝</h3>
+                            <div className="whisper-tabs">
+                              <button
+                                className={`whisper-tab ${activeWhisperTab === 'A' ? 'active' : ''}`}
+                                onClick={() => setActiveWhisperTab('A')}
+                              >
+                                {myRole === 'A' ? `${myName} (我)` : `${partnerName} (TA)`} 的留言
+                              </button>
+                              <button
+                                className={`whisper-tab ${activeWhisperTab === 'B' ? 'active' : ''}`}
+                                onClick={() => setActiveWhisperTab('B')}
+                              >
+                                {myRole === 'B' ? `${myName} (我)` : `${partnerName} (TA)`} 的留言
+                              </button>
+                            </div>
+                          </div>
+                          
+                          <div className="letters-container">
+                            <div className={`letter-card partner-a-letter ${activeWhisperTab === 'A' ? '' : 'hidden'}`}>
+                              <div className="letter-card-tape"></div>
+                              <div className="letter-body">
+                                <div className="whisper-list">
+                                  <div className="whisper-item">
+                                    <div className="whisper-label label-happy">
+                                      这周最让我感到幸福的一件事 💖
+                                    </div>
+                                    <p className="whisper-content">{reportData.A.noteHappy || '未填写'}</p>
+                                  </div>
+                                  <div className="whisper-item">
+                                    <div className="whisper-label label-improve">
+                                      这周最希望被理解或改善的一件事 💡
+                                    </div>
+                                    <p className="whisper-content">{reportData.A.noteImprove || '未填写'}</p>
+                                  </div>
+                                  <div className="whisper-item">
+                                    <div className="whisper-label label-action">
+                                      下周我愿意为关系做出的一个具体行动 🏃‍♂️
+                                    </div>
+                                    <p className="whisper-content">{reportData.A.noteAction || '未填写'}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className={`letter-card partner-b-letter ${activeWhisperTab === 'B' ? '' : 'hidden'}`}>
+                              <div className="letter-card-tape"></div>
+                              <div className="letter-body">
+                                <div className="whisper-list">
+                                  <div className="whisper-item">
+                                    <div className="whisper-label label-happy">
+                                      这周最让我感到幸福的一件事 💖
+                                    </div>
+                                    <p className="whisper-content">{reportData.B.noteHappy || '未填写'}</p>
+                                  </div>
+                                  <div className="whisper-item">
+                                    <div className="whisper-label label-improve">
+                                      这周最希望被理解或改善的一件事 💡
+                                    </div>
+                                    <p className="whisper-content">{reportData.B.noteImprove || '未填写'}</p>
+                                  </div>
+                                  <div className="whisper-item">
+                                    <div className="whisper-label label-action">
+                                      下周我愿意为关系做出的一个具体行动 🏃‍♂️
+                                    </div>
+                                    <p className="whisper-content">{reportData.B.noteAction || '未填写'}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
                         {/* Score & Comments Detail Card */}
                         <div className="card report-card-comments full-width">
                           <h3>各项打分与原因备注明细 📝</h3>
@@ -1389,97 +1480,6 @@ export default function App() {
                               );
                             })}
                             
-                          </div>
-                        </div>
-
-                        {/* Conflict Handling badge & analysis */}
-                        <div className="card report-card-conflict">
-                          <h3>本周摩擦沟通模式</h3>
-                          <div className="conflict-badge-container" id="conflict-badge-container">
-                            {conflictBadgeInfo && (
-                              <>
-                                <div className={`badge-art ${conflictBadgeInfo.badgeClass}`}>
-                                  {conflictBadgeInfo.icon}
-                                </div>
-                                <div className="conflict-badge-name">{conflictBadgeInfo.name}</div>
-                                <div className="conflict-badge-desc">{conflictBadgeInfo.desc}</div>
-                              </>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Private Messages / Letters Box */}
-                        <div className="card report-card-messages full-width">
-                          <div className="messages-header-row">
-                            <h3>彼此的三句话碎碎念 📝</h3>
-                            <div className="whisper-tabs">
-                              <button
-                                className={`whisper-tab ${activeWhisperTab === 'A' ? 'active' : ''}`}
-                                onClick={() => setActiveWhisperTab('A')}
-                              >
-                                {myRole === 'A' ? `${myName} (我)` : `${partnerName} (TA)`} 的留言
-                              </button>
-                              <button
-                                className={`whisper-tab ${activeWhisperTab === 'B' ? 'active' : ''}`}
-                                onClick={() => setActiveWhisperTab('B')}
-                              >
-                                {myRole === 'B' ? `${myName} (我)` : `${partnerName} (TA)`} 的留言
-                              </button>
-                            </div>
-                          </div>
-                          
-                          <div className="letters-container">
-                            <div className={`letter-card partner-a-letter ${activeWhisperTab === 'A' ? '' : 'hidden'}`}>
-                              <div className="letter-card-tape"></div>
-                              <div className="letter-body">
-                                <div className="whisper-list">
-                                  <div className="whisper-item">
-                                    <div className="whisper-label label-happy">
-                                      这周最让我感到幸福的一件事 💖
-                                    </div>
-                                    <p className="whisper-content">{reportData.A.noteHappy || '未填写'}</p>
-                                  </div>
-                                  <div className="whisper-item">
-                                    <div className="whisper-label label-improve">
-                                      这周最希望被理解或改善的一件事 💡
-                                    </div>
-                                    <p className="whisper-content">{reportData.A.noteImprove || '未填写'}</p>
-                                  </div>
-                                  <div className="whisper-item">
-                                    <div className="whisper-label label-action">
-                                      下周我愿意为关系做出的一个具体行动 🏃‍♂️
-                                    </div>
-                                    <p className="whisper-content">{reportData.A.noteAction || '未填写'}</p>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <div className={`letter-card partner-b-letter ${activeWhisperTab === 'B' ? '' : 'hidden'}`}>
-                              <div className="letter-card-tape"></div>
-                              <div className="letter-body">
-                                <div className="whisper-list">
-                                  <div className="whisper-item">
-                                    <div className="whisper-label label-happy">
-                                      这周最让我感到幸福的一件事 💖
-                                    </div>
-                                    <p className="whisper-content">{reportData.B.noteHappy || '未填写'}</p>
-                                  </div>
-                                  <div className="whisper-item">
-                                    <div className="whisper-label label-improve">
-                                      这周最希望被理解或改善的一件事 💡
-                                    </div>
-                                    <p className="whisper-content">{reportData.B.noteImprove || '未填写'}</p>
-                                  </div>
-                                  <div className="whisper-item">
-                                    <div className="whisper-label label-action">
-                                      下周我愿意为关系做出的一个具体行动 🏃‍♂️
-                                    </div>
-                                    <p className="whisper-content">{reportData.B.noteAction || '未填写'}</p>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
                           </div>
                         </div>
 
