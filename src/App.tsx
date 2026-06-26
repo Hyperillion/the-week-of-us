@@ -717,12 +717,13 @@ export default function App() {
       unlockedList: unlockedList.sort((a, b) => a.week.localeCompare(b.week))
     };
   })();
-
   return (
     <div className="app-root-container">
       {/* Background Decorative Blobs */}
-      <div className="blob blob-1"></div>
-      <div className="blob blob-2"></div>
+      <div className="bg-blobs-container">
+        <div className="blob blob-1"></div>
+        <div className="blob blob-2"></div>
+      </div>
 
       {/* App Header */}
       <header className="app-header">
