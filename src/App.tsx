@@ -78,6 +78,19 @@ export default function App() {
   const [createNameA, setCreateNameA] = useState("");
   const [createNameB, setCreateNameB] = useState("");
 
+  // Questionnaire Item Comments
+  const [selfComments, setSelfComments] = useState<Record<string, string>>({});
+  const [partnerComments, setPartnerComments] = useState<Record<string, string>>({});
+  const [feelComments, setFeelComments] = useState<Record<string, string>>({});
+
+  // Expandable comments tracking in form
+  const [expandedSelfComments, setExpandedSelfComments] = useState<Record<string, boolean>>({});
+  const [expandedPartnerComments, setExpandedPartnerComments] = useState<Record<string, boolean>>({});
+  const [expandedFeelComments, setExpandedFeelComments] = useState<Record<string, boolean>>({});
+
+  // Expandable comments tracking in unlocked report Dashboard
+  const [expandedReportItems, setExpandedReportItems] = useState<Record<string, boolean>>({});
+
   // Dashboard state whisper letters tab
   const [activeWhisperTab, setActiveWhisperTab] = useState<'A' | 'B'>('A');
 
@@ -371,20 +384,31 @@ export default function App() {
       const newSelfScores: Record<string, number> = {};
       const newFeelScores: Record<string, number> = {};
 
+      const newSelfComments: Record<string, string> = {};
+      const newPartnerComments: Record<string, string> = {};
+      const newFeelComments: Record<string, string> = {};
+
       BEHAVIORAL_ITEMS.forEach(item => {
         const cap = item.id.charAt(0).toUpperCase() + item.id.slice(1);
         newSelfScores[item.id] = myData[`self${cap}`] ?? 3;
         newPartnerScores[item.id] = myData[`partner${cap}`] ?? 3;
+        newSelfComments[item.id] = myData[`selfComment${cap}`] || "";
+        newPartnerComments[item.id] = myData[`partnerComment${cap}`] || "";
       });
 
       FEEL_ITEMS.forEach(item => {
         const cap = item.id.charAt(0).toUpperCase() + item.id.slice(1);
         newFeelScores[item.id] = myData[`feel${cap}`] ?? 3;
+        newFeelComments[item.id] = myData[`feelComment${cap}`] || "";
       });
 
       setSelfScores(newSelfScores);
       setPartnerScores(newPartnerScores);
       setFeelScores(newFeelScores);
+
+      setSelfComments(newSelfComments);
+      setPartnerComments(newPartnerComments);
+      setFeelComments(newFeelComments);
 
       setConflictHappened(!!myData.conflictHappened);
       setConflictHandling(myData.conflictHandling || 'avoid');
@@ -407,6 +431,10 @@ export default function App() {
       setSelfScores(defaultSelfScores);
       setPartnerScores(defaultPartnerScores);
       setFeelScores(defaultFeelScores);
+
+      setSelfComments({});
+      setPartnerComments({});
+      setFeelComments({});
 
       setConflictHappened(false);
       setConflictHandling('avoid');
@@ -532,11 +560,14 @@ export default function App() {
       const cap = item.id.charAt(0).toUpperCase() + item.id.slice(1);
       data[`self${cap}`] = selfScores[item.id] ?? 3;
       data[`partner${cap}`] = partnerScores[item.id] ?? 3;
+      data[`selfComment${cap}`] = selfComments[item.id] || "";
+      data[`partnerComment${cap}`] = partnerComments[item.id] || "";
     });
 
     FEEL_ITEMS.forEach(item => {
       const cap = item.id.charAt(0).toUpperCase() + item.id.slice(1);
       data[`feel${cap}`] = feelScores[item.id] ?? 3;
+      data[`feelComment${cap}`] = feelComments[item.id] || "";
     });
 
     data.conflictHappened = conflictHappened;
@@ -1175,6 +1206,192 @@ export default function App() {
                           </div>
                         </div>
 
+                        {/* Score & Comments Detail Card */}
+                        <div className="card report-card-comments full-width">
+                          <h3>各项打分与原因备注明细 📝</h3>
+                          <p className="section-desc">点击具体题目，可查看我和TA为该题撰写的具体打分与原因说明（折叠面板）</p>
+                          <div className="comments-detail-list">
+                            
+                            <h4 className="detail-category-title">10 项日常相处表现评估</h4>
+                            {BEHAVIORAL_ITEMS.map(item => {
+                              const cap = item.id.charAt(0).toUpperCase() + item.id.slice(1);
+                              const isExpanded = !!expandedReportItems[item.id];
+                              
+                              const aSelfVal = reportData.A[`self${cap}`] || 3;
+                              const bPartnerVal = reportData.B[`partner${cap}`] || 3;
+                              const bSelfVal = reportData.B[`self${cap}`] || 3;
+                              const aPartnerVal = reportData.A[`partner${cap}`] || 3;
+                              
+                              const valA = (aSelfVal + bPartnerVal) / 2;
+                              const valB = (bSelfVal + aPartnerVal) / 2;
+                              
+                              const aSelfComment = reportData.A[`selfComment${cap}`];
+                              const bPartnerComment = reportData.B[`partnerComment${cap}`];
+                              const bSelfComment = reportData.B[`selfComment${cap}`];
+                              const aPartnerComment = reportData.A[`partnerComment${cap}`];
+                              
+                              const hasAnyComment = !!(aSelfComment || bPartnerComment || bSelfComment || aPartnerComment);
+                              
+                              return (
+                                <div className={`detail-item-box ${isExpanded ? 'expanded' : ''}`} key={item.id}>
+                                  <div className="detail-item-header" onClick={() => setExpandedReportItems(prev => ({ ...prev, [item.id]: !prev[item.id] }))}>
+                                    <div className="detail-item-title-group">
+                                      <span className="detail-item-name">{item.name}</span>
+                                      {hasAnyComment && <span className="comment-indicator-badge">有备注</span>}
+                                    </div>
+                                    <div className="detail-item-scores-summary">
+                                      <span className="score-summary-span">{myNameLabelA}: <strong>{valA.toFixed(1)}</strong></span>
+                                      <span className="score-summary-span">{myNameLabelB}: <strong>{valB.toFixed(1)}</strong></span>
+                                      <span className="expand-chevron">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="chevron-icon">
+                                          <polyline points="6 9 12 15 18 9"></polyline>
+                                        </svg>
+                                      </span>
+                                    </div>
+                                  </div>
+                                  
+                                  {isExpanded && (
+                                    <div className="detail-item-body">
+                                      <div className="detail-eval-grid">
+                                        
+                                        <div className="eval-col col-partner-a">
+                                          <h5>{myNameLabelA} 的表现评价</h5>
+                                          
+                                          <div className="eval-sub-row">
+                                            <span className="sub-row-label">自评得分:</span>
+                                            <span className="sub-row-value">{aSelfVal}分 ({getSliderDescription(`self-${item.id}`, aSelfVal)})</span>
+                                          </div>
+                                          {aSelfComment ? (
+                                            <div className="eval-comment-bubble self-bubble">
+                                              <p>{aSelfComment}</p>
+                                            </div>
+                                          ) : (
+                                            <div className="eval-comment-bubble empty">无自评备注</div>
+                                          )}
+                                          
+                                          <div className="eval-sub-row mt-3">
+                                            <span className="sub-row-label">{myNameLabelB}评TA:</span>
+                                            <span className="sub-row-value">{bPartnerVal}分 ({getSliderDescription(`partner-${item.id}`, bPartnerVal)})</span>
+                                          </div>
+                                          {bPartnerComment ? (
+                                            <div className="eval-comment-bubble partner-bubble">
+                                              <p>{bPartnerComment}</p>
+                                            </div>
+                                          ) : (
+                                            <div className="eval-comment-bubble empty">无评分备注</div>
+                                          )}
+                                        </div>
+                                        
+                                        <div className="eval-col col-partner-b">
+                                          <h5>{myNameLabelB} 的表现评价</h5>
+                                          
+                                          <div className="eval-sub-row">
+                                            <span className="sub-row-label">自评得分:</span>
+                                            <span className="sub-row-value">{bSelfVal}分 ({getSliderDescription(`self-${item.id}`, bSelfVal)})</span>
+                                          </div>
+                                          {bSelfComment ? (
+                                            <div className="eval-comment-bubble self-bubble">
+                                              <p>{bSelfComment}</p>
+                                            </div>
+                                          ) : (
+                                            <div className="eval-comment-bubble empty">无自评备注</div>
+                                          )}
+                                          
+                                          <div className="eval-sub-row mt-3">
+                                            <span className="sub-row-label">{myNameLabelA}评TA:</span>
+                                            <span className="sub-row-value">{aPartnerVal}分 ({getSliderDescription(`partner-${item.id}`, aPartnerVal)})</span>
+                                          </div>
+                                          {aPartnerComment ? (
+                                            <div className="eval-comment-bubble partner-bubble">
+                                              <p>{aPartnerComment}</p>
+                                            </div>
+                                          ) : (
+                                            <div className="eval-comment-bubble empty">无评分备注</div>
+                                          )}
+                                        </div>
+                                        
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                            
+                            <h4 className="detail-category-title mt-4">8 项日常相处体感评估</h4>
+                            {FEEL_ITEMS.map(item => {
+                              const cap = item.id.charAt(0).toUpperCase() + item.id.slice(1);
+                              const isExpanded = !!expandedReportItems[`feel-${item.id}`];
+                              
+                              const feelValA = reportData.A[`feel${cap}`] || 3;
+                              const feelValB = reportData.B[`feel${cap}`] || 3;
+                              
+                              const aFeelComment = reportData.A[`feelComment${cap}`];
+                              const bFeelComment = reportData.B[`feelComment${cap}`];
+                              
+                              const hasAnyComment = !!(aFeelComment || bFeelComment);
+                              
+                              return (
+                                <div className={`detail-item-box feel-box ${isExpanded ? 'expanded' : ''}`} key={`feel-${item.id}`}>
+                                  <div className="detail-item-header" onClick={() => setExpandedReportItems(prev => ({ ...prev, [`feel-${item.id}`]: !prev[`feel-${item.id}`] }))}>
+                                    <div className="detail-item-title-group">
+                                      <span className="detail-item-name">{item.name.split(" ")[0]}</span>
+                                      {hasAnyComment && <span className="comment-indicator-badge">有备注</span>}
+                                    </div>
+                                    <div className="detail-item-scores-summary">
+                                      <span className="score-summary-span">{myNameLabelA}: <strong>{feelValA}分</strong></span>
+                                      <span className="score-summary-span">{myNameLabelB}: <strong>{feelValB}分</strong></span>
+                                      <span className="expand-chevron">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="chevron-icon">
+                                          <polyline points="6 9 12 15 18 9"></polyline>
+                                        </svg>
+                                      </span>
+                                    </div>
+                                  </div>
+                                  
+                                  {isExpanded && (
+                                    <div className="detail-item-body">
+                                      <div className="detail-eval-grid">
+                                        
+                                        <div className="eval-col col-partner-a">
+                                          <h5>{myNameLabelA} 的幸福体感</h5>
+                                          <div className="eval-sub-row">
+                                            <span className="sub-row-label">体感得分:</span>
+                                            <span className="sub-row-value">{feelValA}分 ({getSliderDescription(`feel-${item.id}`, feelValA)})</span>
+                                          </div>
+                                          {aFeelComment ? (
+                                            <div className="eval-comment-bubble feel-bubble">
+                                              <p>{aFeelComment}</p>
+                                            </div>
+                                          ) : (
+                                            <div className="eval-comment-bubble empty">无体验备注</div>
+                                          )}
+                                        </div>
+                                        
+                                        <div className="eval-col col-partner-b">
+                                          <h5>{myNameLabelB} 的幸福体感</h5>
+                                          <div className="eval-sub-row">
+                                            <span className="sub-row-label">体感得分:</span>
+                                            <span className="sub-row-value">{feelValB}分 ({getSliderDescription(`feel-${item.id}`, feelValB)})</span>
+                                          </div>
+                                          {bFeelComment ? (
+                                            <div className="eval-comment-bubble feel-bubble">
+                                              <p>{bFeelComment}</p>
+                                            </div>
+                                          ) : (
+                                            <div className="eval-comment-bubble empty">无体验备注</div>
+                                          )}
+                                        </div>
+                                        
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                            
+                          </div>
+                        </div>
+
                         {/* Conflict Handling badge & analysis */}
                         <div className="card report-card-conflict">
                           <h3>本周摩擦沟通模式</h3>
@@ -1360,6 +1577,25 @@ export default function App() {
                             <div className="score-description">
                               {getSliderDescription(`partner-${item.id}`, partnerScores[item.id] || 3)}
                             </div>
+                            {/* Expandable Comment Section */}
+                            <div className="comment-toggle-section">
+                              <button
+                                type="button"
+                                className={`toggle-comment-btn ${(expandedPartnerComments[item.id] || partnerComments[item.id]) ? 'active' : ''}`}
+                                onClick={() => setExpandedPartnerComments(prev => ({ ...prev, [item.id]: !prev[item.id] }))}
+                              >
+                                {(expandedPartnerComments[item.id] || partnerComments[item.id]) ? "收起备注 💬" : "+ 添加打分原因备注"}
+                              </button>
+                              {(expandedPartnerComments[item.id] || partnerComments[item.id]) && (
+                                <textarea
+                                  placeholder="写下打这个分的原因或具体的小故事（选填）..."
+                                  value={partnerComments[item.id] || ""}
+                                  onChange={(e) => setPartnerComments(prev => ({ ...prev, [item.id]: e.target.value }))}
+                                  className="comment-textarea"
+                                  rows={2}
+                                />
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -1400,6 +1636,25 @@ export default function App() {
                             <div className="score-description">
                               {getSliderDescription(`self-${item.id}`, selfScores[item.id] || 3)}
                             </div>
+                            {/* Expandable Comment Section */}
+                            <div className="comment-toggle-section">
+                              <button
+                                type="button"
+                                className={`toggle-comment-btn ${(expandedSelfComments[item.id] || selfComments[item.id]) ? 'active' : ''}`}
+                                onClick={() => setExpandedSelfComments(prev => ({ ...prev, [item.id]: !prev[item.id] }))}
+                              >
+                                {(expandedSelfComments[item.id] || selfComments[item.id]) ? "收起备注 💬" : "+ 添加自评原因备注"}
+                              </button>
+                              {(expandedSelfComments[item.id] || selfComments[item.id]) && (
+                                <textarea
+                                  placeholder="写下打这个分的原因或具体的小故事（选填）..."
+                                  value={selfComments[item.id] || ""}
+                                  onChange={(e) => setSelfComments(prev => ({ ...prev, [item.id]: e.target.value }))}
+                                  className="comment-textarea"
+                                  rows={2}
+                                />
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -1439,6 +1694,25 @@ export default function App() {
                             </div>
                             <div className="score-description">
                               {getSliderDescription(`feel-${item.id}`, feelScores[item.id] || 3)}
+                            </div>
+                            {/* Expandable Comment Section */}
+                            <div className="comment-toggle-section">
+                              <button
+                                type="button"
+                                className={`toggle-comment-btn ${(expandedFeelComments[item.id] || feelComments[item.id]) ? 'active' : ''}`}
+                                onClick={() => setExpandedFeelComments(prev => ({ ...prev, [item.id]: !prev[item.id] }))}
+                              >
+                                {(expandedFeelComments[item.id] || feelComments[item.id]) ? "收起备注 💬" : "+ 添加体感原因备注"}
+                              </button>
+                              {(expandedFeelComments[item.id] || feelComments[item.id]) && (
+                                <textarea
+                                  placeholder="写下打这个分的原因或具体的小故事（选填）..."
+                                  value={feelComments[item.id] || ""}
+                                  onChange={(e) => setFeelComments(prev => ({ ...prev, [item.id]: e.target.value }))}
+                                  className="comment-textarea"
+                                  rows={2}
+                                />
+                              )}
                             </div>
                           </div>
                         ))}
