@@ -58,6 +58,7 @@ export default function App() {
   const [reportData, setReportData] = useState<RubricReport | null>(null);
   const [insights, setInsights] = useState<any[]>([]);
   const [insightsLoading, setInsightsLoading] = useState(false);
+  const [actionGuide, setActionGuide] = useState<string[]>([]);
 
   // Form input states
   const [partnerScores, setPartnerScores] = useState<Record<string, number>>({});
@@ -333,10 +334,11 @@ export default function App() {
       if (data.unlocked) {
         setInsightsLoading(true);
         try {
-          const insightResponse = await fetch(`/api/insight?coupleId=${coupleId}&week=${weekKey}`);
+          const insightResponse = await fetch(`/api/insight?coupleId=${coupleId}&week=${weekKey}&partner=${myRole}`);
           if (insightResponse.ok) {
             const insightData = await insightResponse.json();
             setInsights(insightData.insights || []);
+            setActionGuide(insightData.actionGuide || []);
           } else {
             console.error("Failed to fetch LLM insights");
           }
@@ -347,6 +349,7 @@ export default function App() {
         }
       } else {
         setInsights([]);
+        setActionGuide([]);
       }
     } catch (err) {
       console.error(err);
@@ -674,6 +677,53 @@ export default function App() {
         desc: "本周我和TA的认知匹配度极高！我们在日常付出与行为表现上取得了极高共识，且幸福感体感非常均衡健康。这是一种极度成熟且彼此珍惜的亲密姿态，请继续保持！"
       });
     }
+    return list;
+  })() : []);
+
+  const actionGuideList = actionGuide.length > 0 ? actionGuide : (hasReport && reportResults ? (() => {
+    const list: string[] = [];
+    const namePartner = partnerName || "TA";
+
+    const gapA = reportResults.selfAvgA - reportResults.partnerAvgA;
+    const gapB = reportResults.selfAvgB - reportResults.partnerAvgB;
+
+    if (myRole === 'A') {
+      if (gapA >= 0.7) {
+        list.push(`主动询问 ${namePartner} 本周在哪些细节上感到被忽视，并温和倾听`);
+      }
+      if (gapB >= 0.7) {
+        list.push(`在氛围轻松时，温和且具体地向 ${namePartner} 表达你的真实感受和边界`);
+      }
+      const behaviorAvgA = (reportResults.selfAvgA + reportResults.partnerAvgB) / 2;
+      if (behaviorAvgA >= 4.0 && reportResults.feelAvgA < 3.2) {
+        list.push(`试着向 ${namePartner} 分享你内心的压力和疲惫，卸下独自承担的包袱`);
+      }
+      const behaviorAvgB = (reportResults.selfAvgB + reportResults.partnerAvgA) / 2;
+      if (behaviorAvgB >= 4.0 && reportResults.feelAvgB < 3.2) {
+        list.push(`给 ${namePartner} 准备一个温暖的拥抱，体恤他/她本周的默默付出`);
+      }
+    } else if (myRole === 'B') {
+      if (gapB >= 0.7) {
+        list.push(`主动询问 ${namePartner} 本周在哪些细节上感到被忽视，并温和倾听`);
+      }
+      if (gapA >= 0.7) {
+        list.push(`在氛围轻松时，温和且具体地向 ${namePartner} 表达你的真实感受和边界`);
+      }
+      const behaviorAvgB = (reportResults.selfAvgB + reportResults.partnerAvgA) / 2;
+      if (behaviorAvgB >= 4.0 && reportResults.feelAvgB < 3.2) {
+        list.push(`试着向 ${namePartner} 分享你内心的压力和疲惫，卸下独自承担的包袱`);
+      }
+      const behaviorAvgA = (reportResults.selfAvgA + reportResults.partnerAvgB) / 2;
+      if (behaviorAvgA >= 4.0 && reportResults.feelAvgA < 3.2) {
+        list.push(`给 ${namePartner} 准备一个温暖的拥抱，体恤他/她本周的默默付出`);
+      }
+    }
+
+    if (list.length < 2) {
+      list.push(`给 ${namePartner} 留一张爱意悄悄话卡片，感谢他/她本周的陪伴`);
+      list.push(`本周找个时间，和 ${namePartner} 进行一次 10 分钟的心灵深聊`);
+    }
+
     return list;
   })() : []);
 
@@ -1169,6 +1219,33 @@ export default function App() {
                                   </div>
                                 </div>
                               ))
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Action Guide Card */}
+                        <div className="card report-card-actions full-width">
+                          <h3>本周专属行动指南 🎯</h3>
+                          <p className="card-desc">结合我们这周的相处评分与留言，为我量身定制的专属行动指引</p>
+                          <div className="actions-content">
+                            {insightsLoading ? (
+                              <div className="insights-loading">
+                                <span className="loading-spinner"></span>
+                                <span className="loading-text">AI 正在生成专属行动步骤...</span>
+                              </div>
+                            ) : (
+                              <ul className="action-list">
+                                {actionGuideList.length > 0 ? (
+                                  actionGuideList.map((item, index) => (
+                                    <li className="action-item" key={index}>
+                                      <span className="action-number">{index + 1}</span>
+                                      <span className="action-text">{item}</span>
+                                    </li>
+                                  ))
+                                ) : (
+                                  <li className="action-empty">暂无行动指南</li>
+                                )}
+                              </ul>
                             )}
                           </div>
                         </div>

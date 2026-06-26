@@ -1,7 +1,9 @@
 import { getRubrics, getCouple, saveRubric } from './db.js';
 
-function generateRuleBasedInsights(dataA, dataB, nameA, nameB) {
-  const list = [];
+function generateRuleBasedInsightsAndActions(dataA, dataB, nameA, nameB) {
+  const insights = [];
+  const actionGuideA = [];
+  const actionGuideB = [];
   
   const getAverage = (data, prefix) => {
     const itemIds = ["Respect", "Comm", "Consensus", "Honest", "Confront", "Repair", "Accept", "Care", "Reliable", "Safety"];
@@ -35,46 +37,54 @@ function generateRuleBasedInsights(dataA, dataB, nameA, nameB) {
   const gapB = selfAvgB - partnerAvgB;
 
   if (gapA >= 0.7) {
-    list.push({
+    insights.push({
       type: "warning",
       icon: "⚠️",
       title: `${nameA} 的自我认知偏差`,
       desc: `${nameA} 的自评平均分 (${selfAvgA.toFixed(1)}) 明显高于对TA评评分 (${partnerAvgA.toFixed(1)})。这说明他/她可能低估了自己某些行为对 ${nameB} 造成的实际影响，建议温和倾听对方心声。`
     });
+    actionGuideA.push(`主动询问 ${nameB} 本周在哪些细节上感到被忽视，并温和倾听`);
+    actionGuideB.push(`在氛围轻松时，温和且具体地向 ${nameA} 表达你的真实感受和边界`);
   }
 
   if (gapB >= 0.7) {
-    list.push({
+    insights.push({
       type: "warning",
       icon: "⚠️",
       title: `${nameB} 的自我认知偏差`,
       desc: `${nameB} 的自评平均分 (${selfAvgB.toFixed(1)}) 明显高于对TA评评分 (${partnerAvgB.toFixed(1)})。这说明他/她可能低估了自己某些行为对 ${nameA} 造成的实际影响，建议温和倾听对方心声。`
     });
+    actionGuideB.push(`主动询问 ${nameA} 本周在哪些细节上感到被忽视，并温和倾听`);
+    actionGuideA.push(`在氛围轻松时，温和且具体地向 ${nameB} 表达你的真实感受和边界`);
   }
 
   const behaviorAvgA = (selfAvgA + partnerAvgB) / 2;
   const behaviorAvgB = (selfAvgB + partnerAvgA) / 2;
 
   if (behaviorAvgA >= 4.0 && feelAvgA < 3.2) {
-    list.push({
+    insights.push({
       type: "info",
       icon: "💡",
       title: `${nameA} 的行为与体感温差`,
       desc: `${nameA} 这周在日常相处行为上的评分较高 (${behaviorAvgA.toFixed(1)})，但幸福感体感较低 (${feelAvgA.toFixed(1)})。这说明他/她表面上虽然做了很多具体的事情，但心里对关系的幸福感体感仍然有些低落，需要多聊聊核心深层问题。`
     });
+    actionGuideA.push(`试着向 ${nameB} 分享你内心的压力和疲惫，卸下独自承担的包袱`);
+    actionGuideB.push(`给 ${nameA} 准备一个温暖的拥抱，体恤他/她本周的默默付出`);
   }
 
   if (behaviorAvgB >= 4.0 && feelAvgB < 3.2) {
-    list.push({
+    insights.push({
       type: "info",
       icon: "💡",
       title: `${nameB} 的行为与体感温差`,
       desc: `${nameB} 这周在日常相处行为上的评分较高 (${behaviorAvgB.toFixed(1)})，但幸福感体感较低 (${feelAvgB.toFixed(1)})。这说明他/她表面上虽然做了很多具体的事情，但心里对关系的幸福感体感仍然有些低落，需要多聊聊核心深层问题。`
     });
+    actionGuideB.push(`试着向 ${nameA} 分享你内心的压力和疲惫，卸下独自承担的包袱`);
+    actionGuideA.push(`给 ${nameB} 准备一个温暖的拥抱，体恤他/她本周的默默付出`);
   }
 
-  if (list.length === 0) {
-    list.push({
+  if (insights.length === 0) {
+    insights.push({
       type: "success",
       icon: "✨",
       title: "双向心智同频共鸣",
@@ -82,7 +92,17 @@ function generateRuleBasedInsights(dataA, dataB, nameA, nameB) {
     });
   }
 
-  return list;
+  // Ensure there are at least 2 actions for A and B
+  if (actionGuideA.length < 2) {
+    actionGuideA.push(`给 ${nameB} 留一张爱意悄悄话卡片，感谢他/她本周的陪伴`);
+    actionGuideA.push(`本周找个时间，和 ${nameB} 进行一次 10 分钟的心灵深聊`);
+  }
+  if (actionGuideB.length < 2) {
+    actionGuideB.push(`给 ${nameA} 留一张爱意悄悄话卡片，感谢他/她本周的陪伴`);
+    actionGuideB.push(`本周找个时间，和 ${nameA} 进行一次 10 分钟的心灵深聊`);
+  }
+
+  return { insights, actionGuideA, actionGuideB };
 }
 
 export default async function handler(req, res) {
@@ -106,7 +126,7 @@ export default async function handler(req, res) {
       return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
     }
 
-    const { coupleId, week } = req.query;
+    const { coupleId, week, partner } = req.query;
     if (!coupleId || !week) {
       return res.status(400).json({ error: "Missing required parameters: 'coupleId' and 'week'" });
     }
@@ -118,12 +138,7 @@ export default async function handler(req, res) {
 
     const rubrics = await getRubrics(coupleId, week);
     if (!rubrics.A || !rubrics.B) {
-      return res.status(200).json({ insights: [], message: "Waiting for both partners to submit" });
-    }
-
-    // Return cached insights if they have already been generated and saved
-    if (rubrics.insights) {
-      return res.status(200).json({ insights: rubrics.insights, fallback: false, cached: true });
+      return res.status(200).json({ insights: [], actionGuide: [], message: "Waiting for both partners to submit" });
     }
 
     const dataA = rubrics.A;
@@ -131,16 +146,53 @@ export default async function handler(req, res) {
     const nameA = couple.nameA || "伴侣A";
     const nameB = couple.nameB || "伴侣B";
 
+    // Return cached insights and filter action guide based on requesting partner
+    if (rubrics.insights) {
+      const cacheData = rubrics.insights;
+      let insightsList = [];
+      let actionGuide = [];
+
+      if (Array.isArray(cacheData)) {
+        // Legacy cache format (insights array only)
+        insightsList = cacheData;
+      } else if (cacheData && cacheData.insights) {
+        // New cache format (object with insights and guides)
+        insightsList = cacheData.insights;
+        if (partner === 'A') {
+          actionGuide = cacheData.actionGuideA || [];
+        } else if (partner === 'B') {
+          actionGuide = cacheData.actionGuideB || [];
+        }
+      }
+
+      return res.status(200).json({
+        insights: insightsList,
+        actionGuide: actionGuide,
+        fallback: false,
+        cached: true
+      });
+    }
+
     const apiKey = process.env.MINIMAX_API_KEY;
     if (!apiKey) {
       console.warn("MINIMAX_API_KEY is not configured. Falling back to rule-based insights.");
-      const fallbackInsights = generateRuleBasedInsights(dataA, dataB, nameA, nameB);
-      return res.status(200).json({ insights: fallbackInsights, fallback: true });
+      const fallbackData = generateRuleBasedInsightsAndActions(dataA, dataB, nameA, nameB);
+      let actionGuide = [];
+      if (partner === 'A') {
+        actionGuide = fallbackData.actionGuideA;
+      } else if (partner === 'B') {
+        actionGuide = fallbackData.actionGuideB;
+      }
+      return res.status(200).json({
+        insights: fallbackData.insights,
+        actionGuide: actionGuide,
+        fallback: true
+      });
     }
 
     // Prepare prompt
     const systemPrompt = `你是一位资深的亲密关系专家和情感咨询师。
-请根据伴侣双方填写的周度默契互评表数据（包括各自的自评、TA评、主观幸福体感、冲突处理方式以及详细的悄悄话备注），进行深度的关系洞察分析。
+请根据伴侣双方填写的周度默契互评表数据（包括各自的自评、TA评、主观幸福体感、冲突处理方式以及详细的悄悄话备注），进行深度的关系洞察分析，并为双方指引定制专属的“下周行动指南”。
 你必须分析：
 1. 双方评分的默契程度（例如：自评与TA评是否存在明显的分歧/认知温差，即一方觉得自己做得很好，但另一方觉得不够）。
 2. 双方的幸福感体感和连结感是否平衡。
@@ -148,31 +200,43 @@ export default async function handler(req, res) {
 4. 冲突发生情况及处理方式（冷处理回避 vs 积极沟通修复 vs 寻求共赢）。
 
 输出格式规范：
-你必须直接返回一个合法的 JSON 数组，不需要包含 \`\`\`json 等任何 Markdown 格式标记。
-该 JSON 数组包含 3 到 4 个条目，每个条目代表一条关系洞察。
-每个条目的属性如下：
-- "type": 只能是 "success"（代表本周做得很棒、值得表扬和保持的闪光点）、"info"（代表温和的中性提醒、细节发现、沟通建议）、"warning"（代表需要警惕的潜在矛盾、认知偏差或回避冷战迹象）。
-- "icon": 一个贴合该洞察主题的表情符号（例如 ✨, 💡, ⚠️, 💬, ❤️, 🌸, 🤝 等）。
-- "title": 简短、温馨且吸引人的标题（8个字以内，例如："心意相通"、"爱意温差"、"沟通警报"）。
-- "desc": 温和而有深度的分析描述。必须具体针对他们的打分差异和悄悄话内容进行点评，语言要温馨、有同理心、富有洞察力。请用极简的语言点评，每个条目的描述控制在 2 句话或 70 个字以内。
+你必须直接返回一个合法的 JSON 对象，绝对不能包含 \`\`\`json 等任何 Markdown 格式标记，确保可以直接被 JSON.parse 解析。
+该 JSON 对象包含三个属性：
+1. "insights": 一个数组，包含 3 到 4 条深度关系洞察。每个条目必须是包含 type ("success"|"info"|"warning"), icon (表情符号), title (8字内标题), desc (极简点评，70字内，不含英文双引号) 的对象。
+2. "actionGuideA": 一个数组，包含 2 到 3 条给伴侣A（姓名：${nameA}）下周的具体行动建议指南（每条建议在 30 字以内，动作要具体可执行）。
+3. "actionGuideB": 一个数组，包含 2 到 3 条给伴侣B（姓名：${nameB}）下周的具体行动建议指南（每条建议在 30 字以内，动作要具体可执行）。
 
-注意：在 "desc" 和 "title" 的文本中，绝对不能出现未经转义的英文双引号（"），如果需要引用词语，请使用中文双引号（“和”）或单引号。对于 "A" 和 "B" 这两个占位代称，你应该替换为他们的真实名字（${nameA} 和 ${nameB}）。
+注意：
+- 关系洞察在 "insights" 中，是伴侣双方都可以看到的共享内容。
+- 行动指南 "actionGuideA" 专属给 ${nameA} 一个人看，"actionGuideB" 专属给 ${nameB} 一个人看，请指导各自人称的独立行动。
+- 在所有文本中，绝对不能出现未经转义的英文双引号（"），如果需要引用词语，请使用中文双引号（“和”）或单引号。
+- 对于 "A" 和 "B" 这两个占位代称，你应该替换为他们的真实名字（${nameA} 和 ${nameB}）。
 
 示例输出：
-[
-  {
-    "type": "success",
-    "icon": "✨",
-    "title": "温柔的退让",
-    "desc": "本周 ${nameB} 提到吵架时 ${nameA} 给了自己台阶下很感动，这与 ${nameA} 评分中表现出的高包容度完全契合。你们能在冲突中看见彼此的爱，这非常难得！"
-  },
-  {
-    "type": "warning",
-    "icon": "⚠️",
-    "title": "偏爱温差",
-    "desc": "${nameA} 认为在安全感上做得很好，但 ${nameB} 的对TA评分仅给了2分。结合备注来看，${nameA} 因为工作疲惫忽略了 ${nameB} 的陪伴诉求，建议双方下周就此进行一次温柔的谈心。"
-  }
-]`;
+{
+  "insights": [
+    {
+      "type": "success",
+      "icon": "✨",
+      "title": "温柔的退让",
+      "desc": "本周 ${nameB} 提到吵架时 ${nameA} 给了自己台阶下很感动，这与 ${nameA} 评分中表现出的高包容度完全契合。你们能在冲突中看见彼此的爱，这非常难得！"
+    },
+    {
+      "type": "warning",
+      "icon": "⚠️",
+      "title": "偏爱温差",
+      "desc": "${nameA} 认为在安全感上做得很好，但 ${nameB} 的对TA评分仅给了2分。结合备注来看，${nameA} 因为工作疲惫忽略了 ${nameB} 的陪伴诉求，建议双方下周就此进行一次温柔的谈心。"
+    }
+  ],
+  "actionGuideA": [
+    "周三提前半小时下班，为 ${nameB} 准备其期待的日式咖喱饭作为惊喜",
+    "当听到 ${nameB} 抱怨时，先停下手头工作注视对方 10 秒，倾听其委屈"
+  ],
+  "actionGuideB": [
+    "主动分担周六的打扫卫生，让疲累的 ${nameA} 可以多休息补个觉",
+    "在 ${nameA} 表现急躁时，用拥抱代替讲道理，包容其近期的工作压力"
+  ]
+}`;
 
     const userPrompt = `本周伴侣双方的打分和备注数据如下：
 
@@ -245,7 +309,7 @@ export default async function handler(req, res) {
   - 需要改善的细节: "${dataB.noteImprove || '无'}"
   - 下周的行动承诺: "${dataB.noteAction || '无'}"
 
-请根据以上打分数据和悄悄话描述，分析出3-4个具有深度洞察性的关系要点，直接返回符合属性要求的 JSON 数组。`;
+请根据以上打分数据和悄悄话描述，分析出 3-4 个深度关系洞察以及给小红、小明的下周各2-3条专属行动指南。直接返回合法的 JSON 对象。`;
 
     const apiBody = {
       model: "MiniMax-M3",
@@ -279,8 +343,14 @@ export default async function handler(req, res) {
     if (!minimaxResponse.ok) {
       const errorText = await minimaxResponse.text();
       console.error(`MiniMax API error: ${minimaxResponse.status} ${minimaxResponse.statusText} - ${errorText}`);
-      const fallbackInsights = generateRuleBasedInsights(dataA, dataB, nameA, nameB);
-      return res.status(200).json({ insights: fallbackInsights, fallback: true });
+      const fallbackData = generateRuleBasedInsightsAndActions(dataA, dataB, nameA, nameB);
+      let actionGuide = [];
+      if (partner === 'A') {
+        actionGuide = fallbackData.actionGuideA;
+      } else if (partner === 'B') {
+        actionGuide = fallbackData.actionGuideB;
+      }
+      return res.status(200).json({ insights: fallbackData.insights, actionGuide: actionGuide, fallback: true });
     }
 
     const result = await minimaxResponse.json();
@@ -315,19 +385,42 @@ export default async function handler(req, res) {
         parsedInsights = JSON.parse(fixedText);
       } catch (innerError) {
         console.error("Failed to parse MiniMax JSON output, raw text:", replyText);
-        const fallbackInsights = generateRuleBasedInsights(dataA, dataB, nameA, nameB);
-        return res.status(200).json({ insights: fallbackInsights, fallback: true });
+        const fallbackData = generateRuleBasedInsightsAndActions(dataA, dataB, nameA, nameB);
+        let actionGuide = [];
+        if (partner === 'A') {
+          actionGuide = fallbackData.actionGuideA;
+        } else if (partner === 'B') {
+          actionGuide = fallbackData.actionGuideB;
+        }
+        return res.status(200).json({ insights: fallbackData.insights, actionGuide: actionGuide, fallback: true });
       }
     }
 
-    // Persist successfully generated AI insights to the database
+    // Persist successfully generated AI insights (containing actionGuideA and actionGuideB) to database
     await saveRubric(coupleId, week, "insights", parsedInsights);
 
-    return res.status(200).json({ insights: parsedInsights, fallback: false });
+    let actionGuide = [];
+    if (partner === 'A') {
+      actionGuide = parsedInsights.actionGuideA || [];
+    } else if (partner === 'B') {
+      actionGuide = parsedInsights.actionGuideB || [];
+    }
+
+    return res.status(200).json({
+      insights: parsedInsights.insights || [],
+      actionGuide: actionGuide,
+      fallback: false
+    });
 
   } catch (error) {
     console.error("Error in api/insight.js:", error);
-    const fallbackInsights = generateRuleBasedInsights(rubrics.A, rubrics.B, couple.nameA, couple.nameB);
-    return res.status(200).json({ insights: fallbackInsights, fallback: true });
+    const fallbackData = generateRuleBasedInsightsAndActions(rubrics.A, rubrics.B, couple.nameA, couple.nameB);
+    let actionGuide = [];
+    if (partner === 'A') {
+      actionGuide = fallbackData.actionGuideA;
+    } else if (partner === 'B') {
+      actionGuide = fallbackData.actionGuideB;
+    }
+    return res.status(200).json({ insights: fallbackData.insights, actionGuide: actionGuide, fallback: true });
   }
 }
