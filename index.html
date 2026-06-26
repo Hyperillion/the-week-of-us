@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>The Week of Us - 每周情侣双向默契互评</title>
+  <!-- Google Fonts for premium typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&family=Zhi+Mang+Xing&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Background Decorative Blobs -->
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <span class="brand-cursive">The Week of Us</span>
+        <h1 class="brand-title" id="app-title-text">每周双向互评 Rubric</h1>
+      </div>
+      <div class="header-actions">
+        <!-- Global Week Selector -->
+        <div class="week-selector-bar hidden" id="header-week-selector">
+          <label for="global-week-select" class="visually-hidden">当前互评周期：</label>
+          <div class="custom-dropdown" id="custom-week-dropdown">
+            <button type="button" class="dropdown-trigger" id="week-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false">
+              <span class="selected-value">加载中...</span>
+              <span class="dropdown-arrow">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="arrow-svg"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </span>
+            </button>
+            <div class="dropdown-menu" id="week-dropdown-menu" role="listbox">
+              <!-- Custom dropdown items will be dynamically populated -->
+            </div>
+          </div>
+          <select id="global-week-select" style="display: none;">
+            <!-- Options will be dynamically populated by JS -->
+          </select>
+        </div>
+
+        <!-- Settings Button -->
+        <button id="settings-toggle" class="btn-icon" aria-label="设置">
+          <svg class="settings-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-main">
+
+    <!-- ==================== SCREEN 1: ONBOARDING (CREATE CABIN) ==================== -->
+    <section id="screen-onboarding" class="screen hidden">
+      <div class="card onboarding-card">
+        <div class="card-badge">第一步</div>
+        <h2>创建我们的默契小屋</h2>
+        <p class="section-desc">输入我和TA的名字，生成我们的专属小屋以及给TA的邀请链接</p>
+        
+        <form id="create-cabin-form" class="form-standard">
+          <div class="form-group">
+            <label for="create-name-a">我的名字</label>
+            <input type="text" id="create-name-a" required autocomplete="name" maxlength="15">
+          </div>
+          <div class="form-group">
+            <label for="create-name-b">TA的名字</label>
+            <input type="text" id="create-name-b" required maxlength="15">
+          </div>
+          <button type="submit" class="btn btn-primary btn-large btn-full">开启默契小屋</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ==================== SCREEN 2: INVITATION / SHARE ==================== -->
+    <section id="screen-share" class="screen hidden">
+      <div class="card onboarding-card">
+        <div class="card-badge">第二步</div>
+        <h2>小屋创建成功！🏡</h2>
+        <p class="section-desc">请将下方的专属邀请链接复制发送给TA，TA点击后即可加入这间小屋</p>
+        
+        <div class="share-box">
+          <label for="invite-link-input" class="visually-hidden">邀请链接</label>
+          <input type="text" id="invite-link-input" readonly value="">
+          <button id="copy-link-btn" class="btn btn-primary">复制链接</button>
+        </div>
+
+        <div class="onboarding-actions">
+          <button id="enter-my-side-btn" class="btn btn-primary btn-large btn-full">进入我的一侧</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SCREEN 3: WELCOME / JOIN INVITATION ==================== -->
+    <section id="screen-join" class="screen hidden">
+      <div class="card onboarding-card">
+        <div class="card-badge">欢迎加入</div>
+        <h2>双向默契小屋邀请 💌</h2>
+        <p class="section-desc" id="join-desc-text">TA正在邀请我加入我们的默契互评小屋</p>
+        
+        <div class="join-info-card">
+          <div class="filling-progress">
+            <div class="partner-progress-card">
+              <div class="avatar-circle partner-a-avatar" id="join-avatar-a">A</div>
+              <div class="progress-details">
+                <span class="partner-name" id="join-name-a">A</span>
+                <span class="fill-status complete">屋主</span>
+              </div>
+            </div>
+            <div class="heart-divider">❤</div>
+            <div class="partner-progress-card">
+              <div class="avatar-circle partner-b-avatar" id="join-avatar-b">B</div>
+              <div class="progress-details">
+                <span class="partner-name" id="join-name-b">你</span>
+                <span class="fill-status text-muted">待加入</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="onboarding-actions">
+          <button id="accept-invite-btn" class="btn btn-primary btn-large btn-full">接受邀请并进入小屋</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== MAIN APPLICATION CONTENT (APP SCREEN) ==================== -->
+    <section id="screen-app" class="screen">
+      
+      <!-- Navigation Tabs -->
+      <nav class="nav-tabs" aria-label="应用导航">
+        <div class="nav-tabs-indicator" id="nav-indicator"></div>
+        <button class="tab-btn active" data-target="dashboard-tab">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+          <span>周看板</span>
+        </button>
+        <button class="tab-btn" data-target="fill-tab">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+          <span>填写问卷</span>
+        </button>
+        <button class="tab-btn" data-target="history-tab">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <span>历史评分</span>
+        </button>
+      </nav>
+
+      <!-- Container for active tab content -->
+      <div class="tab-content">
+        
+        <!-- ==================== DASHBOARD TAB ==================== -->
+        <section id="dashboard-tab" class="tab-panel active">
+          
+          <!-- Cozy Banner Image -->
+          <div class="hero-banner">
+            <img src="couple_cozy.jpg" alt="Cozy couple sitting together" class="banner-img" fetchpriority="high">
+            <div class="banner-overlay">
+              <h2>倾听、接纳、共同成长</h2>
+              <p>“我们不是为了争个对错，而是为了在彼此的差异中，找到最舒适的距离”</p>
+            </div>
+          </div>
+
+          
+          <!-- Status Card (Who filled / Lock status) -->
+          <div class="card status-card">
+            <div class="status-header">
+              <span class="status-indicator-dot pending" id="status-dot"></span>
+              <h3 id="status-title">等待填写中...</h3>
+            </div>
+            <p class="status-description" id="status-desc">本周互评需要我和TA独立填写，完成后，系统将解锁本周的默契报告</p>
+            
+            <div class="filling-progress">
+              <div class="partner-progress-card" id="progress-partner-a">
+                <div class="avatar-circle partner-a-avatar" id="avatar-label-a">A</div>
+                <div class="progress-details">
+                  <span class="partner-name" id="name-label-a">伴侣 A</span>
+                  <span class="fill-status text-muted">未完成</span>
+                </div>
+              </div>
+              <div class="heart-divider">❤</div>
+              <div class="partner-progress-card" id="progress-partner-b">
+                <div class="avatar-circle partner-b-avatar" id="avatar-label-b">B</div>
+                <div class="progress-details">
+                  <span class="partner-name" id="name-label-b">伴侣 B</span>
+                  <span class="fill-status text-muted">未完成</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="status-actions">
+              <button id="quick-fill-btn" class="btn btn-primary">立即去填写</button>
+            </div>
+          </div>
+
+          <!-- Lock Overlay Container for Report -->
+          <div id="report-container" class="report-section locked">
+            
+            <!-- Locked State Message -->
+            <div class="lock-overlay">
+              <svg class="lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+              <h3>解锁本周报告</h3>
+              <p>我和TA都提交评分后，此处的默契深度分析、雷达图与悄悄话留言板将会解锁显示</p>
+            </div>
+
+            <!-- Unlocked Report Elements -->
+            <div class="report-grid">
+              
+              <!-- Summary Score Card -->
+              <div class="card report-card-summary">
+                <div class="harmony-score-container">
+                  <span class="harmony-label">本周关系得分</span>
+                  <div class="harmony-value" id="harmony-score">--</div>
+                  <div class="harmony-level" id="harmony-level">--</div>
+                </div>
+                <div class="weekly-verdict" id="weekly-verdict"></div>
+              </div>
+
+              <!-- SVG Radar Chart Card -->
+              <div class="card report-card-chart">
+                <h3>我和TA的表现对照雷达图</h3>
+                <p class="chart-desc">展现我和TA在这周 10 项日常表现中的<br>综合评分<br>（自评和TA评的加权均值）</p>
+                <div class="chart-wrapper">
+                  <!-- Dynamically Rendered SVG Radar -->
+                  <svg id="radar-chart" class="radar-svg" viewBox="0 0 400 400" width="100%" height="100%"></svg>
+                </div>
+                <div class="chart-legend">
+                  <span class="legend-item"><span class="legend-color color-a"></span><span id="chart-legend-a">我</span> 的表现</span>
+                  <span class="legend-item"><span class="legend-color color-b"></span><span id="chart-legend-b">TA</span> 的表现</span>
+                </div>
+              </div>
+
+              <!-- Relationship Deep Insights Card -->
+              <div class="card report-card-insights full-width">
+                <h3>关系深度洞察 🔍</h3>
+                <div class="insights-content" id="insights-container">
+                  <!-- Generated by JS: Self vs Partner gaps, Feeling vs Behavior check -->
+                </div>
+              </div>
+
+              <!-- Score breakdown detail list -->
+              <div class="card report-card-details">
+                <h3>细分项目评分明细</h3>
+                <div class="breakdown-list" id="breakdown-list"></div>
+              </div>
+
+              <!-- Conflict Handling badge & analysis -->
+              <div class="card report-card-conflict">
+                <h3>本周摩擦沟通模式</h3>
+                <div class="conflict-badge-container" id="conflict-badge-container"></div>
+              </div>
+
+              <!-- Private Messages / Letters Box -->
+              <div class="card report-card-messages full-width">
+                <div class="messages-header-row">
+                  <h3>彼此的三句话碎碎念 📝</h3>
+                  <div class="whisper-tabs">
+                    <button class="whisper-tab active" data-target="letter-card-a" id="whisper-tab-a">A 的留言</button>
+                    <button class="whisper-tab" data-target="letter-card-b" id="whisper-tab-b">B 的留言</button>
+                  </div>
+                </div>
+                
+                <div class="letters-container">
+                  
+                  <div class="letter-card partner-a-letter" id="letter-card-a">
+                    <div class="letter-card-tape"></div>
+                    <div class="letter-body" id="letter-content-a">
+                      <!-- Populated dynamically -->
+                    </div>
+                  </div>
+                  
+                  <div class="letter-card partner-b-letter hidden" id="letter-card-b">
+                    <div class="letter-card-tape"></div>
+                    <div class="letter-body" id="letter-content-b">
+                      <!-- Populated dynamically -->
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ==================== FILL RUBRIC TAB ==================== -->
+        <section id="fill-tab" class="tab-panel">
+          
+          <form id="rubric-form" class="rubric-form-element">
+            
+            <!-- Identity Information -->
+            <div class="card form-card">
+              <h3>评分人身份</h3>
+              <p class="section-desc" id="fill-identity-desc">正在以我的身份进行填写</p>
+              <div class="identity-confirm-box" id="identity-display-box">
+                <div class="avatar-circle partner-a-avatar" id="fill-avatar">A</div>
+                <div class="identity-confirm-details">
+                  <span class="identity-role" id="fill-role-title">伴侣 A</span>
+                  <span class="identity-name" id="fill-name-display">姓名</span>
+                </div>
+              </div>
+              <div class="share-invite-shortcut">
+                <p>TA还没加入？<a href="#" id="shortcut-invite-link">复制邀请链接发给TA</a></p>
+              </div>
+            </div>
+
+            <!-- Score Standards Table Reference -->
+            <div class="card form-card rating-standards-card">
+              <h3>评分标准说明</h3>
+              <ul class="standards-list">
+                <li><span>5分</span>做得非常好，我或TA有主动、稳定且具体的表现</li>
+                <li><span>4分</span>整体较好，偶有不足但能及时调整</li>
+                <li><span>3分</span>基本做到，但稳定性或主动性不足</li>
+                <li><span>2分</span>多次没有做到，已经影响关系体验</li>
+                <li><span>1分</span>严重缺失，或明知有问题仍持续回避、违反</li>
+              </ul>
+            </div>
+
+            <!-- Partner Evaluation Section (Generated by JS) -->
+            <div class="card form-card">
+              <div class="card-badge">维度一</div>
+              <h3>我对TA的评价 (TA评)</h3>
+              <p class="section-desc">评价本周TA的相处细节，带着包容与鼓励为爱打分</p>
+              <div id="partner-eval-container"></div>
+            </div>
+
+            <!-- Self Evaluation Section (Generated by JS) -->
+            <div class="card form-card">
+              <div class="card-badge">维度二</div>
+              <h3>我的自我反思 (自评)</h3>
+              <p class="section-desc">回顾本周我自己的行为表现，坦诚地为自己打分</p>
+              <div id="self-eval-container"></div>
+            </div>
+
+            <!-- General feeling Section (Generated by JS) -->
+            <div class="card form-card">
+              <div class="card-badge">维度三</div>
+              <h3>每周综合体感</h3>
+              <p class="section-desc">这周我在这段关系里的主观感受如何？</p>
+              <div id="feel-eval-container"></div>
+            </div>
+
+            <!-- Conflict Resolution Section -->
+            <div class="card form-card">
+              <div class="card-badge">特别机制</div>
+              <h3>本周摩擦与矛盾解决</h3>
+              <p class="section-desc">发生矛盾本身不扣分，逃避沟通、只想争输赢会扣分，但诚实面对并积极修复会获得满分肯定</p>
+
+              <div class="form-group-toggle">
+                <div class="toggle-label-group">
+                  <span class="toggle-title">本周是否有发生过摩擦或矛盾？</span>
+                  <span class="toggle-desc">勾选后将展开冲突解决方式评估</span>
+                </div>
+                <label class="switch-container">
+                  <input type="checkbox" id="conflict-happened" name="conflict-happened">
+                  <span class="switch-slider"></span>
+                </label>
+              </div>
+
+              <!-- Hidden section showing conflict handling options -->
+              <div id="conflict-details-group" class="conflict-details-group hidden">
+                <span class="radio-group-title">面对摩擦，我们采取了怎样的态度？</span>
+                
+                <div class="conflict-options">
+                  <label class="conflict-option-card penalty">
+                    <input type="radio" name="conflict-handling" value="avoid" checked>
+                    <div class="option-content">
+                      <span class="option-icon">🔴</span>
+                      <div class="option-text">
+                        <span class="option-name">逃避、冷处理、欺骗、攻击，或只想争输赢</span>
+                        <span class="option-impact text-penalty">关系警告：回避或对抗性处理会伤害感情，本周评分扣 15 分</span>
+                      </div>
+                    </div>
+                  </label>
+
+                  <label class="conflict-option-card bonus">
+                    <input type="radio" name="conflict-handling" value="resolve">
+                    <div class="option-content">
+                      <span class="option-icon">🟡</span>
+                      <div class="option-text">
+                        <span class="option-name">直面问题、认真倾听、承担责任，并努力修复</span>
+                        <span class="option-impact text-bonus">积极解决：愿意为修复关系付出诚意，本周评分加 5 分</span>
+                      </div>
+                    </div>
+                  </label>
+
+                  <label class="conflict-option-card double-bonus">
+                    <input type="radio" name="conflict-handling" value="winwin">
+                    <div class="option-content">
+                      <span class="option-icon">🟢</span>
+                      <div class="option-text">
+                        <span class="option-name">接纳TA不完美，在守住核心底线时找到我和TA都满意的方案</span>
+                        <span class="option-impact text-double-bonus">完美方案：最高默契表现！在包容中达成一致，本周评分加 10 分</span>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Three sentences board -->
+            <div class="card form-card">
+              <div class="card-badge">心声</div>
+              <h3>彼此的三句话碎碎念 📝</h3>
+              <p class="section-desc">留下我最真实的心声（提交后仅在解锁报告时TA可见）</p>
+              
+              <div class="form-group-textarea">
+                <label for="note-happy">这周最让我感到幸福的一件事 💖：</label>
+                <textarea id="note-happy" required class="custom-textarea" placeholder="例如：星期二下班回家看到TA买了我爱吃的草莓..." rows="2"></textarea>
+              </div>
+              
+              <div class="form-group-textarea">
+                <label for="note-improve">这周最希望被理解或改善的一件事 💡：</label>
+                <textarea id="note-improve" required class="custom-textarea" placeholder="例如：那天商量聚会时我觉得有点累，语气有点硬，希望TA别介意..." rows="2"></textarea>
+              </div>
+              
+              <div class="form-group-textarea">
+                <label for="note-action">下周我愿意为关系做出的一个具体行动 🏃‍♂️：</label>
+                <textarea id="note-action" required class="custom-textarea" placeholder="例如：下周三晚上我来下厨做晚餐，让TA下班能吃现成的..." rows="2"></textarea>
+              </div>
+            </div>
+
+            <div class="form-submit-container">
+              <button type="submit" id="submit-rubric-btn" class="btn btn-primary btn-large">提交本周评分</button>
+            </div>
+
+          </form>
+
+        </section>
+
+        <!-- ==================== HISTORY TAB ==================== -->
+        <section id="history-tab" class="tab-panel">
+          <div class="card history-intro-card">
+            <h3>我们的爱之轨迹</h3>
+            <p class="section-desc">这里记录了我们过去每周的互评得分和分数走势</p>
+            <div class="history-stats">
+              <div class="stat-box">
+                <span class="stat-num" id="stat-weeks-count">0</span>
+                <span class="stat-label">共同记录周数</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-num" id="stat-avg-harmony">--</span>
+                <span class="stat-label">历史平均评分</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-num" id="stat-badges-count">0</span>
+                <span class="stat-label">获得合璧勋章</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Line Chart Card -->
+          <div id="history-chart-card" class="card history-chart-card hidden">
+            <h3>评分走势图 📈</h3>
+            <p class="chart-desc">展现每周我们之间评分的变化趋势（加权总满意度）</p>
+            <div class="line-chart-wrapper">
+              <svg id="history-line-chart" class="line-chart-svg" viewBox="0 0 500 250" width="100%"></svg>
+            </div>
+          </div>
+
+          <div class="card history-list-card">
+            <h3>往期互评记录</h3>
+            <div class="history-list" id="history-list-container">
+              <div class="empty-state">
+                <p>暂无历史评分数据，赶快和TA一起提交第一周的互评吧！</p>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+      </div>
+    </section>
+  </main>
+
+  <!-- Settings Modal -->
+  <div id="settings-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>小屋设置 & 偏好</h3>
+        <button id="close-settings-btn" class="btn-close" aria-label="关闭设置">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        
+        <!-- Theme Toggle Section in Settings -->
+        <div class="settings-section">
+          <div class="settings-row">
+            <div class="settings-info">
+              <span class="settings-title">夜间模式</span>
+              <span class="settings-desc">开启夜间模式以获得更舒适的暗光视觉体验</span>
+            </div>
+            <label class="switch-container">
+              <input type="checkbox" id="modal-theme-toggle">
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Room Settings Section -->
+        <div class="settings-section">
+          <h4 class="settings-section-title">小屋管理</h4>
+          <div class="room-settings-box">
+            <p class="settings-desc">你可以复制当前小屋的邀请链接发送给TA，或者退出当前的小屋</p>
+            <div class="settings-actions-vertical">
+              <button id="settings-modal-copy-invite-btn" class="btn btn-primary btn-full">复制分享邀请链接</button>
+              <button id="settings-modal-leave-room-btn" class="btn btn-danger-outline btn-full">退出当前小屋</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- App Footer -->
+  <footer class="app-footer">
+    <p>© 2026 The Week of Us. 为更有温度的亲密关系而设计。</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
