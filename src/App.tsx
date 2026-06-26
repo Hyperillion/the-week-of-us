@@ -19,6 +19,7 @@ interface JoinInfo {
   coupleId: string;
   nameA: string;
   nameB: string;
+  role: 'A' | 'B';
 }
 
 export default function App() {
@@ -96,7 +97,8 @@ export default function App() {
   // Copy helper
   const copyInviteLink = (e?: React.MouseEvent) => {
     if (e) e.preventDefault();
-    const url = `${window.location.origin}/?coupleId=${coupleId}&role=B`;
+    const targetRole = myRole === 'B' ? 'A' : 'B';
+    const url = `${window.location.origin}/?coupleId=${coupleId}&role=${targetRole}`;
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(url)
         .then(() => showToast("专属邀请链接已复制到剪贴板，快发送给TA吧！", "success"))
@@ -172,7 +174,7 @@ export default function App() {
     const urlRole = params.get("role");
     const savedCoupleId = localStorage.getItem("us_couple_id");
 
-    if (urlCoupleId && urlRole === "B") {
+    if (urlCoupleId && (urlRole === "A" || urlRole === "B")) {
       setScreen('join');
       fetch(`/api/couple?id=${urlCoupleId}`)
         .then(res => {
@@ -183,7 +185,8 @@ export default function App() {
           setJoinInfo({
             coupleId: urlCoupleId,
             nameA: data.nameA,
-            nameB: data.nameB
+            nameB: data.nameB,
+            role: urlRole as 'A' | 'B'
           });
         })
         .catch(err => {
@@ -491,17 +494,21 @@ export default function App() {
   // Screen 3 Join room: accepting invite
   const handleAcceptInvite = async () => {
     if (!joinInfo) return;
-    const { coupleId: cid, nameA, nameB } = joinInfo;
+    const { coupleId: cid, nameA, nameB, role } = joinInfo;
+
+    const myRoleVal = role;
+    const myNameVal = role === 'A' ? nameA : nameB;
+    const partnerNameVal = role === 'A' ? nameB : nameA;
 
     localStorage.setItem("us_couple_id", cid);
-    localStorage.setItem("us_my_role", "B");
-    localStorage.setItem("us_my_name", nameB);
-    localStorage.setItem("us_partner_name", nameA);
+    localStorage.setItem("us_my_role", myRoleVal);
+    localStorage.setItem("us_my_name", myNameVal);
+    localStorage.setItem("us_partner_name", partnerNameVal);
 
     setCoupleId(cid);
-    setMyRole("B");
-    setMyName(nameB);
-    setPartnerName(nameA);
+    setMyRole(myRoleVal);
+    setMyName(myNameVal);
+    setPartnerName(partnerNameVal);
 
     window.history.replaceState({}, document.title, window.location.pathname);
     // await injectMockDataIfEmpty(cid);
@@ -855,18 +862,18 @@ export default function App() {
               <div className="card-badge">欢迎加入</div>
               <h2>双向默契小屋邀请 💌</h2>
               <p className="section-desc" id="join-desc-text">
-                {joinInfo ? `TA ${joinInfo.nameA} 正在邀请我加入我们的默契互评小屋，我们将能共同见证每一周的幸福指数` : "TA正在邀请我加入我们的默契互评小屋"}
+                {joinInfo ? `TA ${joinInfo.role === 'A' ? joinInfo.nameB : joinInfo.nameA} 正在邀请我加入我们的默契互评小屋，我们将能共同见证每一周的幸福指数` : "TA正在邀请我加入我们的默契互评小屋"}
               </p>
               
               <div className="join-info-card">
                 <div className="filling-progress">
                   <div className="partner-progress-card">
                     <div className="avatar-circle partner-a-avatar" id="join-avatar-a">
-                      {joinInfo ? joinInfo.nameA.charAt(0) : "A"}
+                      {joinInfo ? (joinInfo.role === 'A' ? joinInfo.nameB.charAt(0) : joinInfo.nameA.charAt(0)) : "屋主"}
                     </div>
                     <div className="progress-details">
                       <span className="partner-name" id="join-name-a">
-                        {joinInfo ? joinInfo.nameA : "A"}
+                        {joinInfo ? (joinInfo.role === 'A' ? joinInfo.nameB : joinInfo.nameA) : "屋主"}
                       </span>
                       <span className="fill-status complete">屋主</span>
                     </div>
@@ -874,11 +881,11 @@ export default function App() {
                   <div className="heart-divider">❤</div>
                   <div className="partner-progress-card">
                     <div className="avatar-circle partner-b-avatar" id="join-avatar-b">
-                      {joinInfo ? joinInfo.nameB.charAt(0) : "B"}
+                      {joinInfo ? (joinInfo.role === 'A' ? joinInfo.nameA.charAt(0) : joinInfo.nameB.charAt(0)) : "你"}
                     </div>
                     <div className="progress-details">
                       <span className="partner-name" id="join-name-b">
-                        {joinInfo ? joinInfo.nameB : "你"}
+                        {joinInfo ? (joinInfo.role === 'A' ? joinInfo.nameA : joinInfo.nameB) : "你"}
                       </span>
                       <span className="fill-status text-muted">待加入</span>
                     </div>
