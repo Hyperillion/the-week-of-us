@@ -1,4 +1,4 @@
-import { getRubrics, getCouple } from './db.js';
+import { getRubrics, getCouple, saveRubric } from './db.js';
 
 function generateRuleBasedInsights(dataA, dataB, nameA, nameB) {
   const list = [];
@@ -119,6 +119,11 @@ export default async function handler(req, res) {
     const rubrics = await getRubrics(coupleId, week);
     if (!rubrics.A || !rubrics.B) {
       return res.status(200).json({ insights: [], message: "Waiting for both partners to submit" });
+    }
+
+    // Return cached insights if they have already been generated and saved
+    if (rubrics.insights) {
+      return res.status(200).json({ insights: rubrics.insights, fallback: false, cached: true });
     }
 
     const dataA = rubrics.A;
@@ -314,6 +319,9 @@ export default async function handler(req, res) {
         return res.status(200).json({ insights: fallbackInsights, fallback: true });
       }
     }
+
+    // Persist successfully generated AI insights to the database
+    await saveRubric(coupleId, week, "insights", parsedInsights);
 
     return res.status(200).json({ insights: parsedInsights, fallback: false });
 
