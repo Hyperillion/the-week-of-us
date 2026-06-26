@@ -4,15 +4,17 @@ import path from 'path';
 // Local dev database path in the temporary directory
 const LOCAL_DB_PATH = path.join('/tmp', 'the_week_of_us_dev.json');
 
-// Check if Vercel KV / Upstash Redis credentials are set
-const isProdDb = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+// Check if Vercel KV, direct Upstash Redis, or Storage integration credentials are set
+const REDIS_URL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || process.env.STORAGE_URL;
+const REDIS_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || process.env.STORAGE_TOKEN;
+const isProdDb = !!(REDIS_URL && REDIS_TOKEN);
 
 /**
  * Executes a Redis command via HTTP REST API
  */
 async function runRedis(command) {
-  const url = process.env.KV_REST_API_URL;
-  const token = process.env.KV_REST_API_TOKEN;
+  const url = REDIS_URL;
+  const token = REDIS_TOKEN;
   
   const response = await fetch(url, {
     method: "POST",
