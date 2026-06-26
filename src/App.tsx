@@ -56,6 +56,8 @@ export default function App() {
 
   // Rubric Data for currently selected week
   const [reportData, setReportData] = useState<RubricReport | null>(null);
+  const [insights, setInsights] = useState<any[]>([]);
+  const [insightsLoading, setInsightsLoading] = useState(false);
 
   // Form input states
   const [partnerScores, setPartnerScores] = useState<Record<string, number>>({});
@@ -327,6 +329,25 @@ export default function App() {
       if (!response.ok) throw new Error("Failed to fetch report data");
       const data: RubricReport = await response.json();
       setReportData(data);
+
+      if (data.unlocked) {
+        setInsightsLoading(true);
+        try {
+          const insightResponse = await fetch(`/api/insight?coupleId=${coupleId}&week=${weekKey}`);
+          if (insightResponse.ok) {
+            const insightData = await insightResponse.json();
+            setInsights(insightData.insights || []);
+          } else {
+            console.error("Failed to fetch LLM insights");
+          }
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setInsightsLoading(false);
+        }
+      } else {
+        setInsights([]);
+      }
     } catch (err) {
       console.error(err);
     }
@@ -606,7 +627,7 @@ export default function App() {
   // Calculations for report UI
   const hasReport = reportData && reportData.unlocked && reportData.A && reportData.B;
   const reportResults = hasReport ? calculateScores(reportData.A, reportData.B) : null;
-  const insightsList = hasReport && reportResults ? (() => {
+  const insightsList = insights.length > 0 ? insights : (hasReport && reportResults ? (() => {
     const list: { type: 'warning' | 'info' | 'success'; icon: string; title: string; desc: string }[] = [];
     const nameA = myRole === 'A' ? `${myName} (我)` : `${partnerName} (TA)`;
     const nameB = myRole === 'B' ? `${myName} (我)` : `${partnerName} (TA)`;
@@ -654,7 +675,7 @@ export default function App() {
       });
     }
     return list;
-  })() : [];
+  })() : []);
 
   // Breakdown render calculation values
   const myNameLabelA = myRole === 'A' ? myName : partnerName;
@@ -1133,15 +1154,22 @@ export default function App() {
                         <div className="card report-card-insights full-width">
                           <h3>关系深度洞察 🔍</h3>
                           <div className="insights-content" id="insights-container">
-                            {insightsList.map((item, index) => (
-                              <div className={`insight-card ${item.type}`} key={index}>
-                                <span className="insight-icon">{item.icon}</span>
-                                <div className="insight-text">
-                                  <strong>{item.title}</strong>
-                                  <span>{item.desc}</span>
-                                </div>
+                            {insightsLoading ? (
+                              <div className="insights-loading">
+                                <span className="loading-spinner"></span>
+                                <span className="loading-text">AI 正在深度解析双向问卷与悄悄话备注中...</span>
                               </div>
-                            ))}
+                            ) : (
+                              insightsList.map((item, index) => (
+                                <div className={`insight-card ${item.type}`} key={index}>
+                                  <span className="insight-icon">{item.icon}</span>
+                                  <div className="insight-text">
+                                    <strong>{item.title}</strong>
+                                    <span>{item.desc}</span>
+                                  </div>
+                                </div>
+                              ))
+                            )}
                           </div>
                         </div>
 

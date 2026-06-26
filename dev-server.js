@@ -7,6 +7,8 @@ import { fileURLToPath } from 'url';
 import coupleHandler from './api/couple.js';
 import rubricHandler from './api/rubric.js';
 import historyHandler from './api/history.js';
+import insightHandler from './api/insight.js';
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -72,6 +74,8 @@ const server = http.createServer(async (req, res) => {
         return await rubricHandler(req, res);
       } else if (pathname === '/api/history') {
         return await historyHandler(req, res);
+      } else if (pathname === '/api/insight') {
+        return await insightHandler(req, res);
       }
       
       // 4. Static Files Routing
